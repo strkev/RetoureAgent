@@ -185,7 +185,7 @@ python -m unittest discover -s tests
 ```
 
 ### B. Automatisierte Szenarien
-Führt die 4 vorgegebenen Testfälle automatisiert durch und validiert die Ausführung über Assertions:
+Führt die 6 vorgegebenen Testfälle automatisiert durch und validiert die Ausführung über Assertions:
 ```bash
 python main.py --test
 ```

@@ -327,22 +327,16 @@ main {
   text-align: right;
 }
 
-/* Structured Action Card inside Chat */
 .card-action {
   margin-top: 0.65rem;
   background: #ffffff;
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-sm);
   padding: 0.75rem;
-  border-left: 3px solid var(--secondary);
 }
 
 .card-action.card-refund {
   border-left-color: var(--success);
-}
-
-.card-action.card-credit {
-  border-left-color: #3b82f6;
 }
 
 .card-action.card-escalation {
