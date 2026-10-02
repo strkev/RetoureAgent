@@ -1,0 +1,87 @@
+# ==============================================================================
+# .gitignore - Best Practices für Python, LangGraph & E-Commerce Service Agent
+# ==============================================================================
+
+# Python Bytecode & Kompilate
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtuelle Umgebungen
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# Test- und Coverage-Caches
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Type-Checker & Linter Caches
+.mypy_cache/
+.ruff_cache/
+.dmypy.json
+dmypy.json
+
+# IDE und Editoren
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# Betriebssystem (macOS / Windows / Linux)
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+
+# Logs & temporäre Laufzeitdaten
+*.log
+logs/
+*.tmp
+*.temp
+
+# Lokale Konfigurationen, Umgebungsvariablen & Secrets
+.env*
+!.env.example
+*.local
+*.pem
+*.key
+*.cert
+*.crt
+*.pfx
+*.p12
+credentials.json
+client_secret*.json

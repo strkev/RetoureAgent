@@ -1,0 +1,95 @@
+{
+  "accounts": {
+    "ACC-101": {
+      "account_id": "ACC-101",
+      "name": "Max",
+      "nachname": "Mustermann",
+      "email": "kunde1@example.com",
+      "telefonnummer": "+49 170 1234567",
+      "adresse": "Musterstraße 42, 10115 Berlin",
+      "land": "Deutschland",
+      "zahlungsmittel": "PayPal",
+      "password": "secret123"
+    },
+    "ACC-102": {
+      "account_id": "ACC-102",
+      "name": "Erika",
+      "nachname": "Musterfrau",
+      "email": "kunde2@example.com",
+      "telefonnummer": "+49 171 9876543",
+      "adresse": "Goetheallee 7, 80331 München",
+      "land": "Deutschland",
+      "zahlungsmittel": "Klarna",
+      "password": "secret123"
+    },
+    "ACC-103": {
+      "account_id": "ACC-103",
+      "name": "Johannes",
+      "nachname": "Schmidt",
+      "email": "kunde3@example.com",
+      "telefonnummer": "+49 172 5556677",
+      "adresse": "Hauptstraße 15, 50667 Köln",
+      "land": "Deutschland",
+      "zahlungsmittel": "Kreditkarte",
+      "password": "secret123"
+    }
+  },
+  "bestellungen": {
+    "ORD-1001": {
+      "bestellnummer": "ORD-1001",
+      "datum_tage_her": 5,
+      "account": "ACC-101",
+      "adresse": "Musterstraße 42, 10115 Berlin",
+      "land": "Deutschland",
+      "zahlungsmittel": "PayPal"
+    },
+    "ORD-1002": {
+      "bestellnummer": "ORD-1002",
+      "datum_tage_her": 20,
+      "account": "ACC-102",
+      "adresse": "Goetheallee 7, 80331 München",
+      "land": "Deutschland",
+      "zahlungsmittel": "Klarna"
+    },
+    "ORD-1003": {
+      "bestellnummer": "ORD-1003",
+      "datum_tage_her": 45,
+      "account": "ACC-103",
+      "adresse": "Hauptstraße 15, 50667 Köln",
+      "land": "Deutschland",
+      "zahlungsmittel": "Kreditkarte"
+    }
+  },
+  "bestelldetails": [
+    {
+      "bestellnummer": "ORD-1001",
+      "artikelnummer": "ART-901",
+      "bezeichnung": "Ergonomischer Bürostuhl",
+      "preis": 199.99
+    },
+    {
+      "bestellnummer": "ORD-1001",
+      "artikelnummer": "ART-902",
+      "bezeichnung": "Schreibtischunterlage",
+      "preis": 50.00
+    },
+    {
+      "bestellnummer": "ORD-1002",
+      "artikelnummer": "ART-801",
+      "bezeichnung": "Kabellose Tastatur",
+      "preis": 69.50
+    },
+    {
+      "bestellnummer": "ORD-1002",
+      "artikelnummer": "ART-802",
+      "bezeichnung": "Mauspad XXL",
+      "preis": 20.00
+    },
+    {
+      "bestellnummer": "ORD-1003",
+      "artikelnummer": "ART-701",
+      "bezeichnung": "4K Monitor 27 Zoll",
+      "preis": 420.00
+    }
+  ]
+}

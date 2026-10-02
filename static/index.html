@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Retourensupport</title>
+  
+  <!-- Fonts & Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="/static/style.css">
+  
+  <!-- Markdown Parser -->
+  <script src="/static/marked.min.js"></script>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div class="brand">
+      <span>Retourensupport</span>
+    </div>
+
+    <div class="header-actions">
+      <!-- Sidebar Trigger Button -->
+      <button class="sidebar-trigger-btn" onclick="openSidebar()" title="Test-Szenarien & API-Einstellungen">
+        <span id="header-api-dot" class="api-status-dot"></span>
+        <i class="fa-solid fa-sliders"></i>
+        <span>Menü & Tests</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Sidebar Overlay -->
+  <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
+
+  <!-- Sidebar Drawer -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">
+        <span>Menü & Konfiguration</span>
+      </div>
+      <button class="sidebar-close-btn" onclick="closeSidebar()" title="Schließen">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+
+    <div class="sidebar-body">
+      <!-- Test-Szenarien Bereich -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">
+          <i class="fa-solid fa-vial"></i>
+          <span>Test-Szenarien (Simulation)</span>
+        </div>
+        <div class="scenario-list">
+          <button id="btn-t1" class="scenario-btn" onclick="runTestCase(1)">
+            <span class="scenario-tag">T1</span>
+            <div class="scenario-info">
+              <span class="scenario-name">Reguläre Retoure (≤ 14 Tage)</span>
+              <span class="scenario-desc">ORD-1001 · 100% Kaufpreiserstattung</span>
+            </div>
+          </button>
+
+          <button id="btn-t2" class="scenario-btn" onclick="runTestCase(2)">
+            <span class="scenario-tag">T2</span>
+            <div class="scenario-info">
+              <span class="scenario-name">Kulanzfrist (15–30 Tage)</span>
+              <span class="scenario-desc">ORD-1002 · Store-Guthaben / Gutschein</span>
+            </div>
+          </button>
+
+          <button id="btn-t3" class="scenario-btn" onclick="runTestCase(3)">
+            <span class="scenario-tag">T3</span>
+            <div class="scenario-info">
+              <span class="scenario-name">Frist abgelaufen (> 30 Tage)</span>
+              <span class="scenario-desc">ORD-1003 · Eskalation & Support-Ticket</span>
+            </div>
+          </button>
+
+          <button id="btn-t4" class="scenario-btn" onclick="runTestCase(4)">
+            <span class="scenario-tag">T4</span>
+            <div class="scenario-info">
+              <span class="scenario-name">3x Auth-Fehlschlag</span>
+              <span class="scenario-desc">Sicherheitssperre & Human Handoff</span>
+            </div>
+          </button>
+
+          <button id="btn-t5" class="scenario-btn" onclick="runTestCase(5)">
+            <span class="scenario-tag">T5</span>
+            <div class="scenario-info">
+              <span class="scenario-name">Nutzerdaten anpassen</span>
+              <span class="scenario-desc">Kundenkonto Login & Adressänderung</span>
+            </div>
+          </button>
+
+          <button id="btn-t6" class="scenario-btn" onclick="runTestCase(6)">
+            <span class="scenario-tag">T6</span>
+            <div class="scenario-info">
+              <span class="scenario-name">AGB & Richtlinien (RAG)</span>
+              <span class="scenario-desc">Fragen zu Rückgabefristen & Gutschein</span>
+            </div>
+          </button>
+
+          <button class="scenario-btn reset" onclick="resetChat()">
+            <span class="scenario-tag"><i class="fa-solid fa-rotate-left"></i></span>
+            <div class="scenario-info">
+              <span class="scenario-name" style="color: var(--danger);">Chat zurücksetzen</span>
+              <span class="scenario-desc">Startet eine frische Session</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid var(--border-subtle);">
+
+      <!-- API-Konfiguration Bereich -->
+      <div class="sidebar-section">
+        <div class="sidebar-section-title">
+          <i class="fa-solid fa-key"></i>
+          <span>LLM-Provider (Optional)</span>
+        </div>
+        
+        <div id="api-status-banner" class="api-status-banner"></div>
+
+        <div class="form-group">
+          <label class="form-label" for="setting-api-key">API Key</label>
+          <input type="password" id="setting-api-key" class="form-input" placeholder="sk-proj-..." autocomplete="off">
+          <span class="form-hint">OpenAI oder kompatibler Key. Ohne Key wird automatisch das Mock-LLM verwendet.</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="setting-api-url">API URL (Base URL)</label>
+          <input type="text" id="setting-api-url" class="form-input" placeholder="https://api.openai.com/v1">
+          <span class="form-hint">Standard ist OpenAI. Unterstützt auch Azure OpenAI, Ollama oder vLLM.</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="setting-model">Modell</label>
+          <input type="text" id="setting-model" class="form-input" placeholder="gpt-4o-mini">
+          <span class="form-hint">Name des Modells (z. B. gpt-4o-mini, gpt-4o, llama3).</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="btn-primary" onclick="saveSettings()">
+        <i class="fa-solid fa-floppy-disk"></i>
+        <span>Einstellungen speichern</span>
+      </button>
+      <button class="btn-secondary" onclick="testConnection()">
+        <i class="fa-solid fa-plug"></i>
+        <span>Verbindung testen</span>
+      </button>
+      <button class="btn-reset" onclick="clearSettings()">
+        <i class="fa-solid fa-arrow-rotate-left"></i>
+        <span>Auf Mock-Modus zurücksetzen</span>
+      </button>
+    </div>
+  </aside>
+
+  <main>
+    <!-- VIEW 1: Split Screen with Real-Time State Inspector -->
+    <div id="view1" class="view-container">
+      <div class="chat-card">
+        <div class="chat-header">
+          <div class="chat-title">Kundenservice Chat</div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="chat-status">
+              <span id="dot-v1" class="status-dot"></span>
+              <span id="status-text-v1">Online</span>
+            </div>
+            <!-- Toggle: In Ansicht 2 (Floating Widget) verkleinern - Nur Icon -->
+            <button class="view-toggle-btn icon-only" onclick="switchView(2)" title="Floating Widget">
+              <i class="fa-solid fa-compress"></i>
+            </button>
+          </div>
+        </div>
+        <div id="messages-v1" class="messages-area"></div>
+        <div class="input-bar">
+          <input type="text" id="input-v1" class="input-field" placeholder="Ihre Nachricht schreiben... (z. B. 'Retoure für ORD-1001, kunde1@example.com')" onkeydown="handleKeyDown(event, 1)">
+          <!-- Senden Button - Nur Icon -->
+          <button id="send-v1" class="send-btn icon-only" onclick="sendMessageFrom(1)" title="Senden">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- State Inspector (Right Panel) -->
+      <div class="inspector-card">
+        <div class="inspector-header">
+          <span>Agent Execution State</span>
+          <span id="thread-id-display" style="font-family: var(--mono); font-size: 0.75rem; color: var(--text-soft);">Thread: #session-init</span>
+        </div>
+        <div class="inspector-content">
+          <div class="state-group">
+            <span class="state-label">Erkannter Intent</span>
+            <span id="badge-intent" class="state-badge">intent: Initialisierung</span>
+            <span id="badge-intent-confidence" class="state-label" style="display:none; margin-top: 2px; font-family: var(--mono); font-size: 0.72rem; color: var(--text-soft);"></span>
+          </div>
+
+          <div class="state-group">
+            <span class="state-label">Aktiver Graph Node</span>
+            <span id="badge-active-node" class="state-badge">node: process_input</span>
+          </div>
+
+          <div class="state-group">
+            <span class="state-label">Authentifizierung</span>
+            <span id="badge-auth-status" class="state-badge">auth_status: false (Attempts: 0/3)</span>
+          </div>
+
+          <div class="state-group">
+            <span class="state-label">Tool-Sperre (Security Lock)</span>
+            <span id="badge-tool-lock" class="state-badge">tools_locked: false (Schreibzugriff aktiv)</span>
+          </div>
+
+          <div class="state-group">
+            <span class="state-label">Kundenstimmung & Eskalation</span>
+            <span id="badge-emotion-status" class="state-badge">frustration: neutral (0/3)</span>
+          </div>
+
+          <div class="state-group">
+            <span class="state-label">Entscheidungslogik (Deterministisch)</span>
+            <div id="json-decision-logic" class="json-code">{\n  "status": "Warte auf Nutzereingabe..."\n}</div>
+          </div>
+
+          <div class="state-group">
+            <span class="state-label">Tool Execution & Eskalation</span>
+            <div id="json-tool-execution" class="json-code">Keine schreibenden Tool-Aufrufe aktiv.</div>
+          </div>
+
+          <div class="state-group">
+            <span class="state-label">Graph Execution Logs</span>
+            <div id="log-stream" class="json-code">[LOG] System bereit. Warte auf Eingabe.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 2: Customer Widget on Storefront (Standard-Ansicht) -->
+    <div id="view2" class="view-container active">
+      <div class="mock-storefront">
+        <div class="mock-hero"></div>
+        <div class="mock-row">
+          <div class="mock-item"></div>
+          <div class="mock-item"></div>
+          <div class="mock-item"></div>
+        </div>
+      </div>
+
+      <!-- Floating Widget -->
+      <div class="chat-card floating-window">
+        <div class="chat-header">
+          <div class="chat-title">Kundenservice</div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="chat-status">
+              <span id="dot-v2" class="status-dot"></span>
+              <span id="status-text-v2">Online</span>
+            </div>
+            <!-- Toggle: In Ansicht 1 (Auditor Split) vergrößern - Nur Icon -->
+            <button class="view-toggle-btn icon-only" onclick="switchView(1)" title="Vergrößern (Auditor Split)">
+              <i class="fa-solid fa-expand"></i>
+            </button>
+          </div>
+        </div>
+        <div id="messages-v2" class="messages-area"></div>
+        <div class="input-bar">
+          <input type="text" id="input-v2" class="input-field" placeholder="Antworten..." onkeydown="handleKeyDown(event, 2)">
+          <!-- Senden Button - Nur Icon -->
+          <button id="send-v2" class="send-btn icon-only" onclick="sendMessageFrom(2)" title="Senden">
+            <i class="fa-solid fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Frontend JavaScript -->
+  <script src="/static/app.js"></script>
+</body>
+</html>
