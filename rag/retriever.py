@@ -23,8 +23,6 @@ def _normalize_text(text: str) -> str:
 def extract_ngrams(text: str) -> List[str]:
     """
     Extrahiert sowohl Wort-N-Gramme (1- und 2-Gramme) als auch Zeichen-N-Gramme (3- und 4-Gramme).
-    Zeichen-N-Gramme ermöglichen die robuste Erkennung von deutschen Wortzusammensetzungen
-    (Komposita wie 'Rücksendekosten', 'Zahlungsmodalität', 'Garantieanspruch') und Flexionen.
     """
     cleaned = _normalize_text(text)
     if not cleaned:
@@ -82,7 +80,7 @@ class AGBRetriever:
             file_path = os.path.join(base_dir, "data", "agb.md")
         self.file_path = file_path
         self.chunks: List[AGBChunk] = []
-        self.df: Counter = Counter()  # Document Frequency pro N-Gram
+        self.df: Counter = Counter()
         self.idf: Dict[str, float] = {}
         self.avg_doc_len: float = 1.0
         self._load_and_chunk()
