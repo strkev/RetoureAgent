@@ -100,7 +100,7 @@ class MockCustomerServiceLLM:
             return MockStructuredExtractor(schema)
         return MockStructuredExtractor(ExtractedReturnInfo)
 
-    def invoke(self, messages: Any) -> AIMessage:
+    def invoke(self, messages: Any, *args, **kwargs) -> AIMessage:
         prompt_text = ""
         if isinstance(messages, list):
             for m in messages:

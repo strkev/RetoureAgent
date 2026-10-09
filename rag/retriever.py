@@ -71,22 +71,33 @@ class AGBChunk:
         self.doc_len = sum(self.ngram_counts.values()) or 1
 
 
-class AGBRetriever:
-    """Lädt, indexiert und findet AGB-Abschnitte mittels N-Gram BM25-Scoring."""
+from pydantic import Field, PrivateAttr
+from langchain_core.retrievers import BaseRetriever
+from langchain_core.documents import Document
+from langchain_core.callbacks import CallbackManagerForRetrieverRun
 
-    def __init__(self, file_path: Optional[str] = None):
-        if not file_path:
+
+class AGBRetriever(BaseRetriever):
+    """
+    Lädt, indexiert und findet AGB-Abschnitte mittels N-Gram BM25-Scoring.
+    """
+    file_path: Optional[str] = Field(default=None, description="Pfad zur AGB Markdown-Datei")
+    top_k: int = Field(default=2, description="Anzahl der abzurufenden Dokumente")
+
+    _chunks: List[AGBChunk] = PrivateAttr(default_factory=list)
+    _df: Counter = PrivateAttr(default_factory=Counter)
+    _idf: Dict[str, float] = PrivateAttr(default_factory=dict)
+    _avg_doc_len: float = PrivateAttr(default=1.0)
+
+    def __init__(self, **data: Any):
+        super().__init__(**data)
+        if not self.file_path:
             base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            file_path = os.path.join(base_dir, "data", "agb.md")
-        self.file_path = file_path
-        self.chunks: List[AGBChunk] = []
-        self.df: Counter = Counter()
-        self.idf: Dict[str, float] = {}
-        self.avg_doc_len: float = 1.0
+            self.file_path = os.path.join(base_dir, "data", "agb.md")
         self._load_and_chunk()
 
     def _load_and_chunk(self) -> None:
-        if not os.path.exists(self.file_path):
+        if not self.file_path or not os.path.exists(self.file_path):
             return
 
         with open(self.file_path, "r", encoding="utf-8") as f:
@@ -94,7 +105,7 @@ class AGBRetriever:
 
         # Teile an '## §' Abschnitten
         sections = re.split(r"(?m)(?=^## §)", raw_text)
-        self.chunks = []
+        self._chunks = []
         for sec in sections:
             sec = sec.strip()
             if not sec or not sec.startswith("##"):
@@ -108,38 +119,45 @@ class AGBRetriever:
             match_id = re.search(r"(§\s*\d+)", title_line)
             sec_id = match_id.group(1) if match_id else ""
 
-            self.chunks.append(AGBChunk(title=title_line, content=body, section_id=sec_id))
+            self._chunks.append(AGBChunk(title=title_line, content=body, section_id=sec_id))
 
-        if not self.chunks:
+        if not self._chunks:
             return
 
         # N-Gram-Vokabular & Document Frequencies berechnen
-        n_docs = len(self.chunks)
-        self.df = Counter()
+        n_docs = len(self._chunks)
+        self._df = Counter()
         total_len = 0
-        for chunk in self.chunks:
+        for chunk in self._chunks:
             total_len += chunk.doc_len
             unique_ngrams = set(chunk.ngram_counts.keys())
             for ng in unique_ngrams:
-                self.df[ng] += 1
+                self._df[ng] += 1
 
-        self.avg_doc_len = total_len / n_docs if n_docs > 0 else 1.0
+        self._avg_doc_len = total_len / n_docs if n_docs > 0 else 1.0
 
         # BM25-IDF vorberechnen
-        self.idf = {}
-        for ng, freq in self.df.items():
-            self.idf[ng] = math.log(1.0 + (n_docs - freq + 0.5) / (freq + 0.5))
+        self._idf = {}
+        for ng, freq in self._df.items():
+            self._idf[ng] = math.log(1.0 + (n_docs - freq + 0.5) / (freq + 0.5))
 
-    def retrieve(self, query: str, top_k: int = 2) -> List[Dict[str, Any]]:
+    def _get_relevant_documents(
+        self, query: str, *, run_manager: Optional[CallbackManagerForRetrieverRun] = None
+    ) -> List[Document]:
         """
-        Sucht die relevantesten AGB-Abschnitte für die Nutzeranfrage mittels N-Gram-BM25.
+        Sucht die relevantesten AGB-Abschnitte für die Nutzeranfrage mittels N-Gram-BM25
+        und gibt standardisierte LangChain Document-Objekte zurück.
         """
-        if not self.chunks or not query or not query.strip():
+        if not self._chunks or not query or not query.strip():
             return []
 
         query_ngrams = extract_ngrams(query)
         if not query_ngrams:
-            return [{"title": self.chunks[0].title, "content": self.chunks[0].content, "section_id": self.chunks[0].section_id, "score": 1.0}]
+            first = self._chunks[0]
+            return [Document(
+                page_content=first.content,
+                metadata={"title": first.title, "section_id": first.section_id, "score": 1.0}
+            )]
 
         # Direktes Paragraphen-Matching als Boost (z.B. "§ 4" oder "Paragraph 5")
         sec_match = re.search(r"(?:§|paragraph|abschnitt)\s*(\d+)", query, re.IGNORECASE)
@@ -151,7 +169,7 @@ class AGBRetriever:
 
         scored_chunks: List[Tuple[float, AGBChunk]] = []
 
-        for chunk in self.chunks:
+        for chunk in self._chunks:
             score = 0.0
 
             # 1. BM25-Scoring über gemeinsame N-Gramme
@@ -160,7 +178,7 @@ class AGBRetriever:
                     continue
 
                 tf = chunk.ngram_counts[ng]
-                idf_val = self.idf.get(ng, 0.5)
+                idf_val = self._idf.get(ng, 0.5)
 
                 # Unterschiedliche N-Gram-Gewichtungen:
                 # Wort-Bigramme & seltene Wort-Unigramme wiegen am stärksten, Zeichen-N-Gramme stützen Komposita
@@ -176,7 +194,7 @@ class AGBRetriever:
 
                 # BM25-Termberechnung
                 numerator = tf * (k1 + 1.0)
-                denominator = tf + k1 * (1.0 - b + b * (chunk.doc_len / self.avg_doc_len))
+                denominator = tf + k1 * (1.0 - b + b * (chunk.doc_len / self._avg_doc_len))
                 score += idf_val * (numerator / denominator) * weight
 
             # 2. Direkter Treffer im Titel (N-Gramm-Überschneidung mit Titel)
@@ -193,14 +211,16 @@ class AGBRetriever:
         # Sortiere nach absteigendem Score
         scored_chunks.sort(key=lambda x: x[0], reverse=True)
 
-        results = []
-        for score, chunk in scored_chunks[:top_k]:
-            results.append({
-                "title": chunk.title,
-                "content": chunk.content,
-                "section_id": chunk.section_id,
-                "score": round(float(score), 2),
-            })
+        results: List[Document] = []
+        for score, chunk in scored_chunks[:self.top_k]:
+            results.append(Document(
+                page_content=chunk.content,
+                metadata={
+                    "title": chunk.title,
+                    "section_id": chunk.section_id,
+                    "score": round(float(score), 2),
+                }
+            ))
         return results
 
 

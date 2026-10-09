@@ -4,7 +4,7 @@ Zusammensetzung und Kompilierung des LangGraph StateGraph für die Retourenabwic
 """
 
 from typing import Any
-from langgraph.graph import END, StateGraph
+from langgraph.graph import END, START, StateGraph
 
 from models import AgentState
 from llm_factory import get_llm
@@ -44,46 +44,20 @@ def create_return_graph(checkpointer: Any = None, llm_instance: Any = None):
     workflow.add_node("node_agb_rag", build_node_agb_rag(active_llm))
     workflow.add_node("node_user_data", node_user_data)
 
-    # 2. Startpunkt festlegen
-    workflow.set_entry_point("node_process_input")
+    # 2. Startpunkt
+    workflow.add_edge(START, "node_process_input")
 
-    # 3. Kanten und Verzweigungen verdrahten
-    workflow.add_conditional_edges(
-        "node_process_input",
-        route_after_input,
-        {
-            "node_verify_auth": "node_verify_auth",
-            "node_agb_rag": "node_agb_rag",
-            "node_user_data": "node_user_data",
-            "node_escalate": "node_escalate",
-            "__end__": END,
-        }
-    )
+    # 3. Kanten und Verzweigungen
+    workflow.add_conditional_edges("node_process_input", route_after_input)
 
     workflow.add_edge("node_agb_rag", END)
     workflow.add_edge("node_user_data", END)
 
-    workflow.add_conditional_edges(
-        "node_verify_auth",
-        route_after_auth,
-        {
-            "node_policy_check": "node_policy_check",
-            "node_auth_retry": "node_auth_retry",
-            "node_escalate": "node_escalate",
-        }
-    )
+    workflow.add_conditional_edges("node_verify_auth", route_after_auth)
 
     workflow.add_edge("node_auth_retry", END)
 
-    workflow.add_conditional_edges(
-        "node_policy_check",
-        route_after_policy,
-        {
-            "node_book_return": "node_book_return",
-            "node_escalate": "node_escalate",
-            "__end__": END,
-        }
-    )
+    workflow.add_conditional_edges("node_policy_check", route_after_policy)
 
     workflow.add_edge("node_book_return", "node_respond_success")
     workflow.add_edge("node_respond_success", END)

@@ -126,7 +126,7 @@ def format_decision_logic(state_result: Dict[str, Any]) -> Dict[str, Any]:
         return {
             "intent": "agb",
             "rag_source": "data/agb.md",
-            "retrieved_sections": [c.get("title") for c in (state_result.get("agb_context") or [])],
+            "retrieved_sections": [(c.metadata.get("title") if hasattr(c, "metadata") else c.get("title")) for c in (state_result.get("agb_context") or [])],
             "status": "Auskunft aus AGB-Dokument beantwortet"
         }
     if current_intent == "nutzerdaten":
@@ -180,7 +180,10 @@ def format_tool_execution(state_result: Dict[str, Any]) -> str:
     handoff = state_result.get("handoff_payload")
 
     if last_node == "node_agb_rag" and state_result.get("agb_context"):
-        chunks_info = "\n".join([f"-> {c.get('title')} (Score: {c.get('score')})" for c in state_result["agb_context"]])
+        chunks_info = "\n".join([
+            f"-> {c.metadata.get('title') if hasattr(c, 'metadata') else c.get('title')} (Score: {c.metadata.get('score') if hasattr(c, 'metadata') else c.get('score')})"
+            for c in state_result["agb_context"]
+        ])
         return f"[RAG RETRIEVAL] AGB-Abschnitte aus data/agb.md geladen:\n{chunks_info}"
 
     if last_node == "node_respond_success" and booking:
@@ -247,7 +250,10 @@ def build_chat_response_payload(session_id: str, state_result: Dict[str, Any]) -
         "order_id": state_result.get("order_id"),
         "email": state_result.get("email"),
         "current_intent": state_result.get("current_intent"),
-        "agb_context": state_result.get("agb_context"),
+        "agb_context": [
+            (c.model_dump() if hasattr(c, "model_dump") else c)
+            for c in (state_result.get("agb_context") or [])
+        ] if state_result.get("agb_context") is not None else None,
         "auth_status": state_result.get("auth_status", False),
         "auth_attempts": state_result.get("auth_attempts", 0),
         "last_active_node": state_result.get("last_active_node", "node_process_input"),

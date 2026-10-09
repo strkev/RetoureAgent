@@ -3,12 +3,10 @@ routes/chat.py
 Endpunkte für synchrone und gestreamte Chat-Interaktionen mit dem LangGraph-Agenten.
 """
 
-import asyncio
 import json
-import re
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
-from langchain_core.messages import HumanMessage
+from langchain_core.messages import AIMessage, AIMessageChunk, HumanMessage
 
 from api_schemas import ChatRequest
 from payload_helpers import build_chat_response_payload
@@ -39,7 +37,7 @@ async def chat_endpoint(req: ChatRequest):
 
 @router.post("/chat/stream")
 async def chat_stream_endpoint(req: ChatRequest):
-    """Server-Sent-Events (SSE) Streaming-Endpunkt für flüssige Token-Ausgabe im Frontend."""
+    """Server-Sent-Events (SSE) Streaming-Endpunkt mit nativem LangGraph astream."""
     if not req.message or not req.message.strip():
         raise HTTPException(status_code=400, detail="Nachricht darf nicht leer sein.")
 
@@ -50,24 +48,23 @@ async def chat_stream_endpoint(req: ChatRequest):
         model=req.model
     )
     config = {"configurable": {"thread_id": session_id}}
-
     input_data = {"messages": [HumanMessage(content=req.message.strip())]}
-    state_result = graph_app.invoke(input_data, config=config)
-    payload = build_chat_response_payload(session_id, state_result)
 
     async def stream_generator():
-        chat_messages = payload.get("messages", [])
-        bot_content = ""
-        for msg in reversed(chat_messages):
-            if msg.get("role") == "bot":
-                bot_content = msg.get("content", "")
-                break
+        async for msg, meta in graph_app.astream(input_data, config=config, stream_mode="messages"):
+            tags = meta.get("tags") or []
+            if "internal_task" in tags:
+                continue
 
-        tokens = re.findall(r'\S+|\s+', bot_content) if bot_content else []
+            if isinstance(msg, AIMessageChunk) and msg.content:
+                yield f"data: {json.dumps({'type': 'token', 'token': msg.content}, ensure_ascii=False)}\n\n"
+            # Vollständige Nachricht bei synchronen / deterministischen Knoten oder Mock-LLM
+            elif isinstance(msg, AIMessage) and not isinstance(msg, AIMessageChunk) and msg.content:
+                yield f"data: {json.dumps({'type': 'token', 'token': msg.content}, ensure_ascii=False)}\n\n"
 
-        for token in tokens:
-            yield f"data: {json.dumps({'type': 'token', 'token': token}, ensure_ascii=False)}\n\n"
-            await asyncio.sleep(0.015)
+        state_snapshot = graph_app.get_state(config)
+        final_state = state_snapshot.values if state_snapshot else {}
+        payload = build_chat_response_payload(session_id, final_state)
 
         # Finales Event mit vollständigem State-Payload für Action Cards & State Inspector
         yield f"data: {json.dumps({'type': 'done', 'payload': payload}, ensure_ascii=False)}\n\n"

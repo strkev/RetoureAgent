@@ -7,6 +7,7 @@ from enum import Enum
 from typing import Annotated, Any, Dict, List, Literal, Optional
 from uuid import UUID, uuid4
 from pydantic import BaseModel, Field
+from langchain_core.documents import Document
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 
@@ -86,7 +87,7 @@ class AgentState(BaseModel):
     auth_attempts: int = 0
     language: str = "de"
     current_intent: Optional[str] = None
-    agb_context: Optional[List[Dict[str, Any]]] = None
+    agb_context: Optional[List[Document]] = None
     order_data: Optional[Dict[str, Any]] = None
     selected_items: Optional[List[str]] = None
     return_confirmed: bool = False

@@ -32,14 +32,16 @@ def build_node_agb_rag(active_llm):
 
         # Retrieval ausführen
         retriever = get_agb_retriever()
-        chunks = retriever.retrieve(user_question, top_k=2)
+        docs = retriever.invoke(user_question)
 
         context_text = ""
-        for c in chunks:
-            context_text += f"\n--- {c['title']} ---\n{c['content']}\n"
+        for d in docs:
+            title = d.metadata.get("title", "")
+            context_text += f"\n--- {title} ---\n{d.page_content}\n"
 
-        log_action("AGB_RETRIEVAL", f"Relevante AGB-Paragraphen abgerufen: {[c['title'] for c in chunks]}")
-        logs.append(f"[LOG][ACTION][AGB_RETRIEVAL] Relevante Abschnitte: {[c['title'] for c in chunks]}")
+        retrieved_titles = [d.metadata.get("title", "") for d in docs]
+        log_action("AGB_RETRIEVAL", f"Relevante AGB-Paragraphen abgerufen: {retrieved_titles}")
+        logs.append(f"[LOG][ACTION][AGB_RETRIEVAL] Relevante Abschnitte: {retrieved_titles}")
 
         prompt = [
             SystemMessage(content=(
@@ -65,7 +67,7 @@ def build_node_agb_rag(active_llm):
 
         return {
             "messages": [AIMessage(content=content)],
-            "agb_context": chunks,
+            "agb_context": docs,
             "next_step": "wait_for_input",
             "last_active_node": "node_agb_rag",
             "execution_logs": logs,

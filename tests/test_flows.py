@@ -155,10 +155,28 @@ class TestCustomerServiceFlows(unittest.TestCase):
         self.assertEqual(r.get("last_active_node"), "node_agb_rag")
         self.assertIsNotNone(r.get("agb_context"))
         self.assertGreater(len(r["agb_context"]), 0)
-        # Überprüfe, dass § 4 Zahlungsbedingungen gefunden wurde
-        self.assertTrue(any("Zahlung" in c["title"] for c in r["agb_context"]))
+        # Überprüfe, dass § 4 Zahlungsbedingungen gefunden wurde (über Document.metadata)
+        self.assertTrue(any("Zahlung" in c.metadata.get("title", "") for c in r["agb_context"]))
         bot_response = r["messages"][-1].content
         self.assertTrue(any(method in bot_response for method in ["PayPal", "Kreditkarte", "Klarna"]))
+
+    def test_agb_base_retriever_interface(self):
+        """Testet die standardisierte BaseRetriever-Implementierung und Dokumentenstruktur."""
+        from langchain_core.documents import Document
+        from langchain_core.retrievers import BaseRetriever
+        from rag import get_agb_retriever
+
+        retriever = get_agb_retriever()
+        self.assertIsInstance(retriever, BaseRetriever)
+
+        # Natives BaseRetriever invoke() aufrufen
+        docs = retriever.invoke("Zahlungsmethoden")
+        self.assertIsInstance(docs, list)
+        self.assertGreater(len(docs), 0)
+        self.assertIsInstance(docs[0], Document)
+        self.assertIn("Zahlung", docs[0].metadata.get("title", ""))
+        self.assertIn("score", docs[0].metadata)
+        self.assertTrue(len(docs[0].page_content) > 0)
 
     def test_agb_rag_warranty_inquiry_english(self):
         """Testet englische AGB-Frage zur Gewährleistung."""
@@ -287,8 +305,33 @@ class TestCustomerServiceFlows(unittest.TestCase):
         self.assertEqual(r4.get("last_active_node"), "node_agb_rag")
         self.assertNotIn("Guten Tag! Wie kann ich Ihnen heute behilflich sein?", r4["messages"][-1].content)
 
+    def test_native_astream_streaming(self):
+        """Testet das native LangGraph astream Streaming."""
+        import asyncio
+        checkpointer = MemorySaver()
+        app = create_return_graph(checkpointer=checkpointer)
+        thread_id = f"test-stream-{uuid4().hex[:6]}"
+        config = {"configurable": {"thread_id": thread_id}}
+
+        async def collect_stream():
+            tokens = []
+            async for msg, meta in app.astream(
+                {"messages": [HumanMessage(content="Hallo")]},
+                config=config,
+                stream_mode="messages"
+            ):
+                if msg.content:
+                    tokens.append(msg.content)
+            return tokens
+
+        tokens = asyncio.run(collect_stream())
+        self.assertGreater(len(tokens), 0)
+        state_snap = app.get_state(config)
+        self.assertEqual(state_snap.values.get("current_intent"), "greeting")
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
 

@@ -109,7 +109,7 @@ Die Systemarchitektur trennt Aufgaben strikt nach Logiktypen, um Halluzinationen
 
 ### 2. Generative KI & Hybrid-Architektur
 * **Hybrid-Ansatz mit dem Laya-Modell**: Für die Eingabeanalyse setzt das System primär auf das leichtgewichtige, spezialisierte **Laya-Modell** (`laya.Router` und `laya.lang.analyse`):
-  * **Sub-Millisekunden-Klassifikation**: Absichten (Intents wie *Retoure*, *AGB*, *Nutzerdaten*, *Greeting*, *Off-Topic*), Sprache (DE, EN) und Frustration/Sentiment werden lokal in circa 42ms klassifiziert.
+  * **Millisekunden-Klassifikation**: Absichten (Intents wie *Retoure*, *AGB*, *Nutzerdaten*, *Greeting*, *Off-Topic*), Sprache (DE, EN) und Frustration/Sentiment werden lokal in circa 42ms klassifiziert.
   * **Token- & Kosteneinsparung**: Da kein autoregressives LLM für reine Intent- und Sentiment-Entscheidungen mit Prompt-Templates aufgerufen werden muss, spart das System API-Tokens und reduziert die Antwortlatenz für den Nutzer drastisch.
   * **Zero-Hallucination bei Identifikatoren**: Bestellnummern (`ORD-...`) und E-Mail-Adressen werden zusätzlich über deterministische reguläre Ausdrücke validiert.
 * **Zielgerichteter LLM-Einsatz**: Generative Sprachmodelle werden erst dann hinzugezogen, wenn freie Textgenerierung zwingend erforderlich ist:

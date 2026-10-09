@@ -111,7 +111,7 @@ def build_node_escalate(active_llm):
             )),
             HumanMessage(content=f"Dialog history:\n{dialog_text}")
         ]
-        summary_response = active_llm.invoke(summary_prompt)
+        summary_response = active_llm.invoke(summary_prompt, config={"tags": ["internal_task"]})
         summary_text = summary_response.content if isinstance(summary_response.content, str) else str(summary_response.content)
 
         handoff = HandoffPayload(
