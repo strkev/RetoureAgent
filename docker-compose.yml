@@ -1,0 +1,7 @@
+services:
+  retouren-agent:
+    build: .
+    container_name: retouren-agent
+    ports:
+      - "8000:8000"
+    restart: unless-stopped

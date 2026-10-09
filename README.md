@@ -169,6 +169,28 @@ python main.py
 ```
 Der Server startet unter `http://127.0.0.1:8000`. Die Anwendung öffnet sich automatisch im Standard-Webbrowser.
 
+---
+
+### Alternative: Start via Docker
+
+Falls Sie keine lokale Python-Umgebung einrichten möchten, können Sie das Projekt direkt mit Docker betreiben:
+
+#### Option A: Docker Compose (empfohlen)
+```bash
+docker compose up -d --build
+```
+
+#### Option B: Docker CLI
+```bash
+# Image bauen
+docker build -t retouren-agent .
+
+# Container starten
+docker run -d -p 8000:8000 --name retouren-agent retouren-agent
+```
+
+Die Anwendung ist anschließend direkt unter **`http://localhost:8000`** erreichbar (ein API-Key sowie das Modell können jederzeit direkt in der Web-UI eingetragen werden).
+
 
 ## 6. Testausführung und Validierung
 
